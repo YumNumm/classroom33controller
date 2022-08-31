@@ -65,7 +65,6 @@ enum AcceptState {
 }
 
 enum DevicePosition {
-  register(0),
   projector1(1),
   projector2(2),
   projector3(3),

@@ -36,6 +36,7 @@ class UserModel {
         'total_point': totalPoint,
         'results': results.map((e) => e.toJson()).toList(),
         'number_of_people': numberOfPeople.toString(),
+        'ride_id': rideId,
       };
 
   /// ユーザ名

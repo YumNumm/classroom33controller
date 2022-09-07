@@ -1,22 +1,26 @@
-import 'dart:developer';
-
-import 'package:controller/page/main.dart';
-import 'package:controller/provider/db_provider.dart';
-import 'package:controller/schema/state/state.dart';
-import 'package:flutter/foundation.dart';
+import 'package:controller/extension/position_color.dart';
+import 'package:controller/utils/provider_logger.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'page/state_distributor.dart';
 import 'private/key.dart';
+import 'schema/state/state.dart';
 
 Future<void> main() async {
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent, // transparent status bar
+    ),
+  );
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
     url: supabaseUrl,
     anonKey: supabaseKey,
-    debug: kDebugMode,
+    debug: true,
   );
   runApp(const MyApp());
 }
@@ -28,10 +32,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
+      observers: [ProvidersLogger()],
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData(
           primarySwatch: Colors.blue,
+          fontFamily: 'NotoSansJP',
           useMaterial3: true,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
@@ -56,55 +62,40 @@ class PositionSelectPage extends HookConsumerWidget {
         children: [
           // DevicePositionの一覧
           for (final item in DevicePosition.values)
-            RadioListTile(
-              value: item,
-              groupValue: selectedDeviceId.value,
-              onChanged: (_) {
-                selectedDeviceId.value = item;
-              },
-              title: Text(item.toString()),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors:
+                      item.onPrimary.map((e) => e.withOpacity(0.4)).toList(),
+                ),
+              ),
+              child: RadioListTile(
+                value: item,
+                groupValue: selectedDeviceId.value,
+                onChanged: (_) {
+                  selectedDeviceId.value = item;
+                },
+                title: Text(item.toString()),
+              ),
             ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          ref.read(selectedDeviceIdProvider.notifier).state =
-              selectedDeviceId.value;
-          log(ref.read(selectedDeviceIdProvider).toString());
-          Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(
-              builder: (context) => const TopPage(),
+          Navigator.of(context).pushAndRemoveUntil<void>(
+            MaterialPageRoute(
+              builder: (context) => StateDistributorPage(
+                position: selectedDeviceId.value,
+              ),
             ),
+            (_) => false,
           );
         },
         label: const Text('開始'),
         icon: const Icon(Icons.play_arrow),
       ),
     );
-  }
-}
-
-List<Color> colorFromPosision(DevicePosition position) {
-  switch (position) {
-    case DevicePosition.projector1:
-      return [
-        const Color.fromARGB(255, 89, 191, 179),
-        const Color.fromARGB(255, 65, 92, 179),
-      ];
-    case DevicePosition.projector2:
-      return [
-        const Color.fromARGB(255, 65, 92, 179),
-        const Color.fromARGB(255, 179, 115, 179),
-      ];
-    case DevicePosition.projector3:
-      return [
-        const Color.fromARGB(255, 255, 114, 16),
-        const Color.fromARGB(255, 191, 184, 43),
-      ];
-    default:
-      return [
-        const Color.fromARGB(255, 17, 91, 175),
-        const Color.fromARGB(255, 73, 173, 255),
-      ];
   }
 }

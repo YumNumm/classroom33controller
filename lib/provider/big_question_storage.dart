@@ -87,7 +87,7 @@ final questions = <BigQuestionSet>[
           SmallQuestionItem(
             id: 14,
             questionStatement: r'金属の共通の性質として正しくないのはどれか?',
-            choices: [r'磁石につく', r'磨くと金属光沢が出る', r'天性と延性がある', r'電気を通し熱を伝える'],
+            choices: [r'磁石につく', r'磨くと金属光沢が出る', r'展性と延性がある', r'電気を通し熱を伝える'],
             correctAnswerIndex: 1,
           ),
           SmallQuestionItem(

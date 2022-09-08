@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:controller/extension/ride_color.dart';
 import 'package:controller/provider/users.dart';
 import 'package:controller/schema/state/state.dart';
 import 'package:controller/schema/user/user_model.dart';
@@ -32,20 +33,20 @@ class OnUserChoicePage extends HookConsumerWidget {
                 error: (error, stack) => Center(
                   child: Text(error.toString()),
                 ),
-                data: (data) => Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      RadioListTile<UserModel?>(
-                        value: null,
-                        groupValue: selectedUser.value,
-                        title: const Text('ユーザなし'),
-                        subtitle: const Text('null'),
-                        secondary: const Icon(Icons.person_add_disabled),
-                        onChanged: (_) => selectedUser.value = _,
-                      ),
-                      SingleChildScrollView(
-                        child: ListView.builder(
+                data: (data) => RefreshIndicator(
+                  onRefresh: () async => ref.refresh(usersFutureProvider),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        RadioListTile<UserModel?>(
+                          value: null,
+                          groupValue: selectedUser.value,
+                          title: const Text('ユーザなし'),
+                          subtitle: const Text('null'),
+                          secondary: const Icon(Icons.person_add_disabled),
+                          onChanged: (_) => selectedUser.value = _,
+                        ),
+                        ListView.builder(
                           physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
                           itemCount: data.length,
@@ -60,12 +61,13 @@ class OnUserChoicePage extends HookConsumerWidget {
                                 DateFormat('yyyy/MM/dd HH:mm:ss')
                                     .format(user.createdAt),
                               ),
+                              tileColor: user.rideId.rideColor.withOpacity(0.3),
                               onChanged: (v) => selectedUser.value = v,
                             );
                           },
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

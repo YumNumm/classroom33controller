@@ -34,9 +34,9 @@ class MyApp extends StatelessWidget {
     return ProviderScope(
       observers: [ProvidersLogger()],
       child: MaterialApp(
-        title: 'Flutter Demo',
+        title: 'C33 Controller',
         theme: ThemeData(
-          primarySwatch: Colors.blue,
+          colorSchemeSeed: const Color.fromARGB(255, 0, 94, 255),
           fontFamily: 'NotoSansJP',
           useMaterial3: true,
           visualDensity: VisualDensity.adaptivePlatformDensity,

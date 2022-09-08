@@ -661,7 +661,7 @@ final questions = <BigQuestionSet>[
   ),
   BigQuestionSet(
     id: 9,
-    title: r'数学 - 高1向け',
+    title: r'数学 - 高1',
     questions: [
       BigQuestionItem(
         id: 0,
@@ -751,7 +751,7 @@ final questions = <BigQuestionSet>[
   ),
   BigQuestionSet(
     id: 10,
-    title: r'数学 - 高2向け',
+    title: r'数学 - 高2',
     questions: [
       BigQuestionItem(
         id: 0,
@@ -850,7 +850,7 @@ final questions = <BigQuestionSet>[
   ),
   BigQuestionSet(
     id: 11,
-    title: r'数学 - 高3向け',
+    title: r'数学 - 高3',
     questions: [
       BigQuestionItem(
         id: 0,
@@ -1276,7 +1276,7 @@ final questions = <BigQuestionSet>[
   ),
   BigQuestionSet(
     id: 16,
-    title: r'物理 - 高2',
+    title: r'化学 - 高2',
     questions: [
       BigQuestionItem(
         id: 0,
@@ -1355,7 +1355,7 @@ final questions = <BigQuestionSet>[
   ),
   BigQuestionSet(
     id: 17,
-    title: r'物理 - 高3',
+    title: r'化学 - 高3',
     questions: [
       BigQuestionItem(
         id: 0,
@@ -1432,4 +1432,5 @@ final questions = <BigQuestionSet>[
     ],
     category: QuestionCategory.forHs,
   ),
+
 ];

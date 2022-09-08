@@ -1,10 +1,11 @@
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../provider/state_item.dart';
+import '../schema/state/state.dart';
 import 'on_running.dart';
 import 'on_user_choice.dart';
 import 'on_waiting_for_admin.dart';
-import '../provider/state_item.dart';
-import '../schema/state/state.dart';
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class StateDistributorPage extends HookConsumerWidget {
   const StateDistributorPage({required this.position, super.key});

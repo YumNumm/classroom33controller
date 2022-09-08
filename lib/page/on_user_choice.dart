@@ -21,31 +21,32 @@ class OnUserChoicePage extends HookConsumerWidget {
       appBar: AppBar(
         title: const Text('OnUserChoicePage'),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ユーザ選択
-            const Text('移動が完了してから続行処理をしてください'),
-            ref.watch(usersFutureProvider).when<Widget>(
-                  loading: () => const Center(
-                    child: CircularProgressIndicator.adaptive(),
-                  ),
-                  error: (error, stack) => Center(
-                    child: Text(error.toString()),
-                  ),
-                  data: (data) => Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        RadioListTile<UserModel?>(
-                          value: null,
-                          groupValue: selectedUser.value,
-                          title: const Text('ユーザなし'),
-                          subtitle: const Text('null'),
-                          secondary: const Icon(Icons.person_add_disabled),
-                          onChanged: (_) => selectedUser.value = _,
-                        ),
-                        ListView.builder(
+      body: Column(
+        children: [
+          // ユーザ選択
+          const Text('移動が完了してから続行処理をしてください'),
+          ref.watch(usersFutureProvider).when<Widget>(
+                loading: () => const Center(
+                  child: CircularProgressIndicator.adaptive(),
+                ),
+                error: (error, stack) => Center(
+                  child: Text(error.toString()),
+                ),
+                data: (data) => Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RadioListTile<UserModel?>(
+                        value: null,
+                        groupValue: selectedUser.value,
+                        title: const Text('ユーザなし'),
+                        subtitle: const Text('null'),
+                        secondary: const Icon(Icons.person_add_disabled),
+                        onChanged: (_) => selectedUser.value = _,
+                      ),
+                      SingleChildScrollView(
+                        child: ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
                           itemCount: data.length,
                           itemBuilder: (context, index) {
@@ -63,12 +64,12 @@ class OnUserChoicePage extends HookConsumerWidget {
                             );
                           },
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-          ],
-        ),
+              ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
@@ -76,6 +77,8 @@ class OnUserChoicePage extends HookConsumerWidget {
               .from('state')
               .update(<String, dynamic>{
                 'big_question_state': BigQuestionState.waitingForAdmin.name,
+                'big_question_group_id': selectedUser.value?.bigQuestionGroupId,
+                'user_id': selectedUser.value?.id,
               })
               .eq('position', stateItem.position.name)
               .execute();
@@ -96,6 +99,7 @@ class OnUserChoicePage extends HookConsumerWidget {
           // TODO(YumNumm): ここで、ユーザの選択を反映させる
         },
         label: const Text('続行'),
+        icon: const Icon(Icons.arrow_forward),
       ),
     );
   }

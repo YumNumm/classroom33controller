@@ -336,6 +336,7 @@ class OnRunningPage extends HookConsumerWidget {
                                             'big_question_state':
                                                 BigQuestionState
                                                     .waitingForController.name,
+                                            'user_id': null,
                                           })
                                           .eq(
                                             'position',

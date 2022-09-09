@@ -490,121 +490,122 @@ class OnRunningPage extends HookConsumerWidget {
                 if (data == OnQuestionTimerState.end)
                   Padding(
                     padding: const EdgeInsets.all(8),
-                    child: Expanded(
-                      child: FloatingActionButton.extended(
-                        onPressed: () async {
-                          // resultCounterの内容確認
-                          await showDialog<void>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: const Text('確認'),
-                                content: Text(counter.toJson().toString()),
-                                actions: [
-                                  FloatingActionButton.extended(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    label: const Text('キャンセル'),
-                                    icon: const Icon(Icons.cancel),
+                    child: FloatingActionButton.extended(
+                      onPressed: () async {
+                        // resultCounterの内容確認
+                        await showDialog<void>(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('確認'),
+                              content: Text(counter.toJson().toString()),
+                              actions: [
+                                FloatingActionButton.extended(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  label: const Text('キャンセル'),
+                                  icon: const Icon(Icons.cancel),
+                                ),
+                                FloatingActionButton.extended(
+                                  label: const Text(
+                                    '送信',
                                   ),
-                                  FloatingActionButton.extended(
-                                    label: const Text(
-                                      '送信',
-                                    ),
-                                    icon: const Icon(Icons.send),
-                                    onPressed: () async {
-                                      // リセット
-                                      ref
-                                          .read(counterProvider.notifier)
-                                          .reset();
-                                      try {
-                                        final supabase =
-                                            Supabase.instance.client;
-                                        if (stateItem.userId != null) {
-                                          final res = await supabase
-                                              .from('users')
-                                              .select()
-                                              .eq('id', stateItem.userId)
-                                              .execute();
-                                          if (res.hasError) {
-                                            print(res.error!.toJson());
-                                            throw Exception(
-                                              res.error!.toJson().toString(),
-                                            );
-                                          }
-                                          final user = UserModel.fromJson(
-                                            (res.data as List)[0]
-                                                as Map<String, dynamic>,
-                                          );
-
-                                          final result = QuestionsResult(
-                                            items: <QuestionResult>[
-                                              ...user.result.items,
-                                              ...ref
-                                                  .read(
-                                                    counterProvider.notifier,
-                                                  )
-                                                  .items,
-                                            ],
-                                          );
-                                          final res2 = await supabase
-                                              .from('users')
-                                              .update(<String, dynamic>{
-                                                'result': result.toJson(),
-                                              })
-                                              .eq('id', user.id)
-                                              .execute();
-                                          if (res2.hasError) {
-                                            throw Exception(
-                                              res2.error!.toJson().toString(),
-                                            );
-                                          }
-                                        }
-                                        final res3 = await supabase
-                                            .from('state')
-                                            .update(<String, dynamic>{
-                                              'big_question_group_id': null,
-                                              'big_question_state':
-                                                  BigQuestionState
-                                                      .waitingForController
-                                                      .name,
-                                              'user_id': null,
-                                            })
-                                            .eq(
-                                              'position',
-                                              stateItem.position.name,
-                                            )
+                                  icon: const Icon(Icons.send),
+                                  onPressed: () async {
+                                    // リセット
+                                    ref.read(counterProvider.notifier).reset();
+                                    try {
+                                      final supabase = Supabase.instance.client;
+                                      if (stateItem.userId != null) {
+                                        final res = await supabase
+                                            .from('users')
+                                            .select()
+                                            .eq('id', stateItem.userId)
                                             .execute();
-                                        Navigator.of(context).pop();
-                                        // snackbar
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text('保存しました'),
-                                          ),
+                                        if (res.hasError) {
+                                          print(res.error!.toJson());
+                                          throw Exception(
+                                            res.error!.toJson().toString(),
+                                          );
+                                        }
+                                        final user = UserModel.fromJson(
+                                          (res.data as List)[0]
+                                              as Map<String, dynamic>,
                                         );
-                                      } catch (e) {
-                                        print(e);
-                                        Navigator.of(context).pop();
-                                        // snackbar
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: Text('エラー発生\n$e'),
-                                          ),
+
+                                        final result = QuestionsResult(
+                                          items: <QuestionResult>[
+                                            ...user.result.items,
+                                            ...ref
+                                                .read(
+                                                  counterProvider.notifier,
+                                                )
+                                                .items,
+                                          ],
                                         );
+                                        final res2 = await supabase
+                                            .from('users')
+                                            .update(<String, dynamic>{
+                                              'result': result.toJson(),
+                                              if (result.items.length == 9)
+                                                'total_point': result.items
+                                                    .map((e) => e.toPoint)
+                                                    .reduce(
+                                                      (value, element) =>
+                                                          value + element,
+                                                    ),
+                                            })
+                                            .eq('id', user.id)
+                                            .execute();
+                                        if (res2.hasError) {
+                                          throw Exception(
+                                            res2.error!.toJson().toString(),
+                                          );
+                                        }
                                       }
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                        label: const Text('確認'),
-                        icon: const Icon(Icons.check),
-                      ),
+                                      final res3 = await supabase
+                                          .from('state')
+                                          .update(<String, dynamic>{
+                                            'big_question_group_id': null,
+                                            'big_question_state':
+                                                BigQuestionState
+                                                    .waitingForController.name,
+                                            'user_id': null,
+                                          })
+                                          .eq(
+                                            'position',
+                                            stateItem.position.name,
+                                          )
+                                          .execute();
+                                      Navigator.of(context).pop();
+                                      // snackbar
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text('保存しました'),
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      print(e);
+                                      Navigator.of(context).pop();
+                                      // snackbar
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text('エラー発生\n$e'),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      label: const Text('確認'),
+                      icon: const Icon(Icons.check),
                     ),
                   ),
                 const SizedBox(height: 20),
@@ -613,17 +614,18 @@ class OnRunningPage extends HookConsumerWidget {
                     stateItem.toJson(),
                   ),
                 ),
-                Text(
-                  const JsonEncoder.withIndent('  ').convert(
-                    ref
-                        .read(questionProvider)
-                        .firstWhere(
-                          (e) => e.id == stateItem.bigQuestionGroupId,
-                        )
-                        .questions[stateItem.position.index]
-                        .questions,
+                if (stateItem.bigQuestionGroupId != null)
+                  Text(
+                    const JsonEncoder.withIndent('  ').convert(
+                      ref
+                          .read(questionProvider)
+                          .firstWhere(
+                            (e) => e.id == stateItem.bigQuestionGroupId,
+                          )
+                          .questions[stateItem.position.index]
+                          .questions,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

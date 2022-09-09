@@ -1,7 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:classroom33common/classroom33common.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -34,6 +33,9 @@ class OnUserChoicePage extends HookConsumerWidget {
                 data: (data) => RefreshIndicator(
                   onRefresh: () async => ref.refresh(usersFutureProvider),
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
                     child: Column(
                       children: [
                         RadioListTile<UserModel?>(

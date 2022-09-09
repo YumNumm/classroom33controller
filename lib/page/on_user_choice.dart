@@ -1,9 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:controller/extension/ride_color.dart';
-import 'package:controller/provider/users.dart';
-import 'package:controller/schema/state/state.dart';
-import 'package:controller/schema/user/user_model.dart';
+import 'package:classroom33common/classroom33common.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';

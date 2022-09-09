@@ -1,8 +1,7 @@
+import 'package:classroom33common/classroom33common.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import '../provider/state_item.dart';
-import '../schema/state/state.dart';
 import 'on_running.dart';
 import 'on_user_choice.dart';
 import 'on_waiting_for_admin.dart';

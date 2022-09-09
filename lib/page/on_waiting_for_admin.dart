@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../schema/state/state.dart';
+import 'package:classroom33common/classroom33common.dart';
+
 
 class OnWaitingForAdminPage extends HookConsumerWidget {
   const OnWaitingForAdminPage({required this.stateItem, super.key});

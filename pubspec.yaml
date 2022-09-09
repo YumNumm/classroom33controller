@@ -12,6 +12,9 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_hooks: ^0.18.5+1
+  classroom33common:
+    git:
+      url: git@github.com:YumNumm/classroom33Common.git
   hooks_riverpod: ^1.0.4
   intl: ^0.17.0
   json_annotation: ^4.6.0

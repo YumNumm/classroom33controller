@@ -1,5 +1,4 @@
-import 'package:controller/extension/position_color.dart';
-import 'package:controller/utils/provider_logger.dart';
+import 'package:classroom33common/classroom33common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -8,7 +7,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'page/state_distributor.dart';
 import 'private/key.dart';
-import 'schema/state/state.dart';
 
 Future<void> main() async {
   SystemChrome.setSystemUIOverlayStyle(

@@ -1,17 +1,12 @@
 import 'dart:convert';
 
-import 'package:controller/extension/correct_answer.dart';
-import 'package:controller/provider/big_question_storage.dart';
-import 'package:controller/provider/projector/timer_provider.dart';
-import 'package:controller/schema/state/state.dart';
-import 'package:controller/schema/user/user_model.dart';
+import 'package:classroom33common/classroom33common.dart';
+import 'package:controller/provider/counter_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../extension/position_color.dart';
 
 class OnRunningPage extends HookConsumerWidget {
   const OnRunningPage({required this.stateItem, super.key});
@@ -21,8 +16,8 @@ class OnRunningPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final correctAnswer = useState<int>(1);
 
-    final timerStream = ref.watch(onQuestionTimerProvdier(stateItem.position))
-      ..whenData((value) {
+    final timerStream = ref.watch(onQuestionTimerProvdier)
+      ..whenData<void>((value) {
         HapticFeedback.vibrate();
         if (stateItem.bigQuestionGroupId == null) {
           return;
@@ -51,15 +46,11 @@ class OnRunningPage extends HookConsumerWidget {
         }
       });
 
-    final resultCounter =
-        useState<Map<int, QuestionResult>>(<int, QuestionResult>{
-      1: QuestionResult(correctCount: 0, wrongCount: 0),
-      2: QuestionResult(correctCount: 0, wrongCount: 0),
-      3: QuestionResult(correctCount: 0, wrongCount: 0),
-    });
+    final counter = ref.watch(counterProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('OnRunningPage'),
+        title: const Text('実行中'),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -87,17 +78,52 @@ class OnRunningPage extends HookConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(),
-                Text(
-                  data.toString(),
-                  style: Theme.of(context).textTheme.titleLarge,
+                Center(
+                  child: Text(
+                    data.name,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: stateItem.position.onPrimary[0],
+                    ),
+                  ),
                 ),
-                if (stateItem.bigQuestionGroupId != null)
+                if (stateItem.bigQuestionGroupId != null &&
+                    (data == OnQuestionTimerState.question1 ||
+                        data == OnQuestionTimerState.wait2 ||
+                        data == OnQuestionTimerState.end))
                   Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: ref
+                            .read(questionProvider)
+                            .firstWhere(
+                              (e) => e.id == stateItem.bigQuestionGroupId,
+                            )
+                            .questions[stateItem.position.index]
+                            .questions[0]
+                            .correctAnswerIndex
+                            .correctAnswerColor,
+                        width: 2,
+                      ),
+                    ),
+                    color: ref
+                        .read(questionProvider)
+                        .firstWhere(
+                          (e) => e.id == stateItem.bigQuestionGroupId,
+                        )
+                        .questions[stateItem.position.index]
+                        .questions[0]
+                        .correctAnswerIndex
+                        .correctAnswerColor
+                        .withOpacity(0.2),
+                    elevation: 0,
                     child: Column(
                       children: [
                         Row(),
                         Text(
-                          '大問1 (${ref.read(questionProvider).firstWhere(
+                          '大問1 (正答は${ref.read(questionProvider).firstWhere(
                                 (e) => e.id == stateItem.bigQuestionGroupId,
                               ).questions[stateItem.position.index].questions[0].correctAnswerIndex})',
                           style: const TextStyle(
@@ -106,55 +132,132 @@ class OnRunningPage extends HookConsumerWidget {
                           ),
                         ),
                         const Divider(),
-                        // 正答カウント用TextFormField
                         Padding(
                           padding: const EdgeInsets.all(8),
-                          child: TextFormField(
-                            keyboardType: TextInputType.number,
-                            initialValue:
-                                resultCounter.value[1]?.correctCount.toString(),
-                            onChanged: (value) {},
-                            decoration: InputDecoration(
-                              labelText: '正答数',
-                              border: const OutlineInputBorder(),
-                              filled: true,
-                              fillColor: ref
-                                  .read(questionProvider)
-                                  .firstWhere(
-                                    (e) => e.id == stateItem.bigQuestionGroupId,
-                                  )
-                                  .questions[stateItem.position.index]
-                                  .questions[0]
-                                  .correctAnswerIndex
-                                  .correctAnswerColor
-                                  .withOpacity(0.3),
+                          child: Text(
+                            '正答数: ${counter.counter1.correctCount}\n'
+                            '不正解数: ${counter.counter1.wrongCount}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        // 誤答カウント用TextFormField
+                        // 正答カウント
                         Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: TextFormField(
-                            keyboardType: TextInputType.number,
-                            initialValue:
-                                resultCounter.value[1]?.wrongCount.toString(),
-                            onChanged: (value) {},
-                            decoration: const InputDecoration(
-                              labelText: '誤答数',
-                              border: OutlineInputBorder(),
-                            ),
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .add(
+                                        questionNumber:
+                                            DevicePosition.projector1.index + 1,
+                                        isCorrect: true,
+                                        isWrong: false,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_plus_1),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .subtract(
+                                        questionNumber:
+                                            DevicePosition.projector1.index + 1,
+                                        isCorrect: true,
+                                        isWrong: false,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_minus_1),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const Divider(),
+                        // 誤答カウント
+                        Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .add(
+                                        questionNumber:
+                                            DevicePosition.projector1.index + 1,
+                                        isCorrect: false,
+                                        isWrong: true,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_plus_1),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .subtract(
+                                        questionNumber:
+                                            DevicePosition.projector1.index + 1,
+                                        isCorrect: false,
+                                        isWrong: true,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_minus_1),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                if (stateItem.bigQuestionGroupId != null)
+                if (stateItem.bigQuestionGroupId != null &&
+                    (data == OnQuestionTimerState.question2 ||
+                        data == OnQuestionTimerState.wait3 ||
+                        data == OnQuestionTimerState.end))
                   Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: ref
+                            .read(questionProvider)
+                            .firstWhere(
+                              (e) => e.id == stateItem.bigQuestionGroupId,
+                            )
+                            .questions[stateItem.position.index]
+                            .questions[1]
+                            .correctAnswerIndex
+                            .correctAnswerColor,
+                        width: 2,
+                      ),
+                    ),
+                    color: ref
+                        .read(questionProvider)
+                        .firstWhere(
+                          (e) => e.id == stateItem.bigQuestionGroupId,
+                        )
+                        .questions[stateItem.position.index]
+                        .questions[1]
+                        .correctAnswerIndex
+                        .correctAnswerColor
+                        .withOpacity(0.2),
+                    elevation: 0,
                     child: Column(
                       children: [
                         Row(),
                         Text(
-                          '大問2 (${ref.read(questionProvider).firstWhere(
+                          '大問2 (正答は${ref.read(questionProvider).firstWhere(
                                 (e) => e.id == stateItem.bigQuestionGroupId,
                               ).questions[stateItem.position.index].questions[1].correctAnswerIndex})',
                           style: const TextStyle(
@@ -163,55 +266,130 @@ class OnRunningPage extends HookConsumerWidget {
                           ),
                         ),
                         const Divider(),
-                        // 正答カウント用TextFormField
                         Padding(
                           padding: const EdgeInsets.all(8),
-                          child: TextFormField(
-                            keyboardType: TextInputType.number,
-                            initialValue:
-                                resultCounter.value[2]?.correctCount.toString(),
-                            onChanged: (value) {},
-                            decoration: InputDecoration(
-                              labelText: '正答数',
-                              border: const OutlineInputBorder(),
-                              filled: true,
-                              fillColor: ref
-                                  .read(questionProvider)
-                                  .firstWhere(
-                                    (e) => e.id == stateItem.bigQuestionGroupId,
-                                  )
-                                  .questions[stateItem.position.index]
-                                  .questions[1]
-                                  .correctAnswerIndex
-                                  .correctAnswerColor
-                                  .withOpacity(0.3),
+                          child: Text(
+                            '正答数: ${counter.counter2.correctCount}\n'
+                            '不正解数: ${counter.counter2.wrongCount}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        // 誤答カウント用TextFormField
+                        // 正答カウント
                         Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: TextFormField(
-                            keyboardType: TextInputType.number,
-                            initialValue:
-                                resultCounter.value[2]?.wrongCount.toString(),
-                            onChanged: (value) {},
-                            decoration: const InputDecoration(
-                              labelText: '誤答数',
-                              border: OutlineInputBorder(),
-                            ),
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .add(
+                                        questionNumber:
+                                            DevicePosition.projector2.index + 1,
+                                        isCorrect: true,
+                                        isWrong: false,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_plus_1),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .subtract(
+                                        questionNumber:
+                                            DevicePosition.projector2.index + 1,
+                                        isCorrect: true,
+                                        isWrong: false,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_minus_1),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(),
+                        // 誤答カウント
+                        Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .add(
+                                        questionNumber:
+                                            DevicePosition.projector2.index + 1,
+                                        isCorrect: false,
+                                        isWrong: true,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_plus_1),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .subtract(
+                                        questionNumber:
+                                            DevicePosition.projector2.index + 1,
+                                        isCorrect: false,
+                                        isWrong: true,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_minus_1),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                if (stateItem.bigQuestionGroupId != null)
+                if (stateItem.bigQuestionGroupId != null &&
+                    (data == OnQuestionTimerState.question3 ||
+                        data == OnQuestionTimerState.end))
                   Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: ref
+                            .read(questionProvider)
+                            .firstWhere(
+                              (e) => e.id == stateItem.bigQuestionGroupId,
+                            )
+                            .questions[stateItem.position.index]
+                            .questions[2]
+                            .correctAnswerIndex
+                            .correctAnswerColor,
+                        width: 2,
+                      ),
+                    ),
+                    color: ref
+                        .read(questionProvider)
+                        .firstWhere(
+                          (e) => e.id == stateItem.bigQuestionGroupId,
+                        )
+                        .questions[stateItem.position.index]
+                        .questions[2]
+                        .correctAnswerIndex
+                        .correctAnswerColor
+                        .withOpacity(0.2),
+                    elevation: 0,
                     child: Column(
                       children: [
                         Row(),
                         Text(
-                          '大問3 (${ref.read(questionProvider).firstWhere(
+                          '大問3 (正答は${ref.read(questionProvider).firstWhere(
                                 (e) => e.id == stateItem.bigQuestionGroupId,
                               ).questions[stateItem.position.index].questions[2].correctAnswerIndex})',
                           style: const TextStyle(
@@ -220,50 +398,90 @@ class OnRunningPage extends HookConsumerWidget {
                           ),
                         ),
                         const Divider(),
-                        // 正答カウント用TextFormField
                         Padding(
                           padding: const EdgeInsets.all(8),
-                          child: TextFormField(
-                            keyboardType: TextInputType.number,
-                            initialValue:
-                                resultCounter.value[3]?.correctCount.toString(),
-                            onChanged: (value) {},
-                            decoration: InputDecoration(
-                              labelText: '正答数',
-                              border: const OutlineInputBorder(),
-                              filled: true,
-                              fillColor: ref
-                                  .read(questionProvider)
-                                  .firstWhere(
-                                    (e) => e.id == stateItem.bigQuestionGroupId,
-                                  )
-                                  .questions[stateItem.position.index]
-                                  .questions[2]
-                                  .correctAnswerIndex
-                                  .correctAnswerColor
-                                  .withOpacity(0.3),
+                          child: Text(
+                            '正答数: ${counter.counter3.correctCount}\n'
+                            '不正解数: ${counter.counter3.wrongCount}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        // 誤答カウント用TextFormField
+                        // 正答カウント
                         Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: TextFormField(
-                            keyboardType: TextInputType.number,
-                            initialValue:
-                                resultCounter.value[3]?.wrongCount.toString(),
-                            onChanged: (value) => resultCounter.value = {
-                              ...resultCounter.value,
-                              3: QuestionResult(
-                                correctCount: int.tryParse(value) ?? 0,
-                                wrongCount:
-                                    resultCounter.value[3]?.wrongCount ?? 0,
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .add(
+                                        questionNumber:
+                                            DevicePosition.projector3.index + 1,
+                                        isCorrect: true,
+                                        isWrong: false,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_plus_1),
+                                ),
                               ),
-                            },
-                            decoration: const InputDecoration(
-                              labelText: '誤答数',
-                              border: OutlineInputBorder(),
-                            ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .subtract(
+                                        questionNumber:
+                                            DevicePosition.projector3.index + 1,
+                                        isCorrect: true,
+                                        isWrong: false,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_minus_1),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(),
+                        // 誤答カウント
+                        Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .add(
+                                        questionNumber:
+                                            DevicePosition.projector3.index + 1,
+                                        isCorrect: false,
+                                        isWrong: true,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_plus_1),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: FloatingActionButton(
+                                  onPressed: () async => ref
+                                      .read(counterProvider.notifier)
+                                      .subtract(
+                                        questionNumber:
+                                            DevicePosition.projector3.index + 1,
+                                        isCorrect: false,
+                                        isWrong: true,
+                                      ),
+                                  elevation: 0,
+                                  child: const Icon(Icons.exposure_minus_1),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -272,106 +490,121 @@ class OnRunningPage extends HookConsumerWidget {
                 if (data == OnQuestionTimerState.end)
                   Padding(
                     padding: const EdgeInsets.all(8),
-                    child: FloatingActionButton.extended(
-                      onPressed: () async {
-                        // resultCounterの内容確認
-                        await showDialog<void>(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('確認'),
-                              content: Text(resultCounter.value.toString()),
-                              actions: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text('キャンセル'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    try {
-                                      final supabase = Supabase.instance.client;
-                                      if (stateItem.userId != null) {
-                                        final res = await supabase
-                                            .from('users')
-                                            .select()
-                                            .eq('id', stateItem.userId)
-                                            .execute();
-                                        if (res.hasError) {
-                                          print(res.error!.toJson());
-                                          throw Exception(
-                                            res.error!.toJson().toString(),
+                    child: Expanded(
+                      child: FloatingActionButton.extended(
+                        onPressed: () async {
+                          // resultCounterの内容確認
+                          await showDialog<void>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: const Text('確認'),
+                                content: Text(counter.toJson().toString()),
+                                actions: [
+                                  FloatingActionButton.extended(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    label: const Text('キャンセル'),
+                                    icon: const Icon(Icons.cancel),
+                                  ),
+                                  FloatingActionButton.extended(
+                                    label: const Text(
+                                      '送信',
+                                    ),
+                                    icon: const Icon(Icons.send),
+                                    onPressed: () async {
+                                      // リセット
+                                      ref
+                                          .read(counterProvider.notifier)
+                                          .reset();
+                                      try {
+                                        final supabase =
+                                            Supabase.instance.client;
+                                        if (stateItem.userId != null) {
+                                          final res = await supabase
+                                              .from('users')
+                                              .select()
+                                              .eq('id', stateItem.userId)
+                                              .execute();
+                                          if (res.hasError) {
+                                            print(res.error!.toJson());
+                                            throw Exception(
+                                              res.error!.toJson().toString(),
+                                            );
+                                          }
+                                          final user = UserModel.fromJson(
+                                            (res.data as List)[0]
+                                                as Map<String, dynamic>,
                                           );
-                                        }
-                                        final user = UserModel.fromJson(
-                                          (res.data as List)[0]
-                                              as Map<String, dynamic>,
-                                        );
 
-                                        final result = QuestionsResult(
-                                          items: [
-                                            ...user.result.items,
-                                            ...resultCounter.value.values
-                                          ],
-                                        );
-                                        final res2 = await supabase
-                                            .from('users')
-                                            .update(<String, dynamic>{
-                                              'result': result.toJson(),
-                                            })
-                                            .eq('id', user.id)
-                                            .execute();
-                                        if (res2.hasError) {
-                                          print(res2.error!.toJson());
-                                          throw Exception(
-                                            res2.error!.toJson().toString(),
+                                          final result = QuestionsResult(
+                                            items: <QuestionResult>[
+                                              ...user.result.items,
+                                              ...ref
+                                                  .read(
+                                                    counterProvider.notifier,
+                                                  )
+                                                  .items,
+                                            ],
                                           );
+                                          final res2 = await supabase
+                                              .from('users')
+                                              .update(<String, dynamic>{
+                                                'result': result.toJson(),
+                                              })
+                                              .eq('id', user.id)
+                                              .execute();
+                                          if (res2.hasError) {
+                                            throw Exception(
+                                              res2.error!.toJson().toString(),
+                                            );
+                                          }
                                         }
+                                        final res3 = await supabase
+                                            .from('state')
+                                            .update(<String, dynamic>{
+                                              'big_question_group_id': null,
+                                              'big_question_state':
+                                                  BigQuestionState
+                                                      .waitingForController
+                                                      .name,
+                                              'user_id': null,
+                                            })
+                                            .eq(
+                                              'position',
+                                              stateItem.position.name,
+                                            )
+                                            .execute();
+                                        Navigator.of(context).pop();
+                                        // snackbar
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text('保存しました'),
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        print(e);
+                                        Navigator.of(context).pop();
+                                        // snackbar
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text('エラー発生\n$e'),
+                                          ),
+                                        );
                                       }
-                                      final res3 = await supabase
-                                          .from('state')
-                                          .update(<String, dynamic>{
-                                            'big_question_group_id': null,
-                                            'big_question_state':
-                                                BigQuestionState
-                                                    .waitingForController.name,
-                                            'user_id': null,
-                                          })
-                                          .eq(
-                                            'position',
-                                            stateItem.position.name,
-                                          )
-                                          .execute();
-                                      Navigator.of(context).pop();
-                                      // snackbar
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text('保存しました'),
-                                        ),
-                                      );
-                                    } catch (e) {
-                                      print(e);
-                                      Navigator.of(context).pop();
-                                      // snackbar
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text('エラー発生\n$e'),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: const Text('OK'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                      label: const Text('送信'),
-                      icon: const Icon(Icons.send),
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        label: const Text('確認'),
+                        icon: const Icon(Icons.check),
+                      ),
                     ),
                   ),
                 const SizedBox(height: 20),
@@ -381,10 +614,15 @@ class OnRunningPage extends HookConsumerWidget {
                   ),
                 ),
                 Text(
-                  data.toString(),
-                ),
-                Text(
-                  resultCounter.value.toString(),
+                  const JsonEncoder.withIndent('  ').convert(
+                    ref
+                        .read(questionProvider)
+                        .firstWhere(
+                          (e) => e.id == stateItem.bigQuestionGroupId,
+                        )
+                        .questions[stateItem.position.index]
+                        .questions,
+                  ),
                 ),
               ],
             ),

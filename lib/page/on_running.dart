@@ -513,8 +513,6 @@ class OnRunningPage extends HookConsumerWidget {
                                   ),
                                   icon: const Icon(Icons.send),
                                   onPressed: () async {
-                                    // リセット
-                                    ref.read(counterProvider.notifier).reset();
                                     try {
                                       final supabase = Supabase.instance.client;
                                       if (stateItem.userId != null) {
@@ -578,6 +576,11 @@ class OnRunningPage extends HookConsumerWidget {
                                             stateItem.position.name,
                                           )
                                           .execute();
+
+                                      // リセット
+                                      ref
+                                          .read(counterProvider.notifier)
+                                          .reset();
                                       Navigator.of(context).pop();
                                       // snackbar
                                       ScaffoldMessenger.of(context)
